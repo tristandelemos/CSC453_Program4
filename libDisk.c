@@ -4,13 +4,7 @@ CSC 453 Program 4
 
 */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <fcntl.h>
-#include <unistd.h>
-
-int BLOCKSIZE = 256;
+#include "libDisk.h"
 
 /* This function opens a regular UNIX file and designates the first nBytes of it as space for the emulated disk. 
 nBytes should be a number that is evenly divisible by the block size. 
