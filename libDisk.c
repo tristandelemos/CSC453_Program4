@@ -4,13 +4,19 @@ CSC 453 Program 4
 
 */
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+
 /* This function opens a regular UNIX file and designates the first nBytes of it as space for the emulated disk. 
 nBytes should be a number that is evenly divisible by the block size. 
 If nBytes > 0 and there is already a file by the given filename, that disk is resized to nBytes, 
 and that file’s contents may be overwritten. If nBytes is 0, an existing disk is opened, 
 and should not be overwritten. There is no requirement to maintain integrity of any content beyond nBytes. 
 Errors must be returned for any other failures, as defined by your own error code system.  */
-int openDisk(char *filename, int nBytes);
+int openDisk(char *filename, int nBytes){
+
+}
 
 /* readBlock() reads an entire block of BLOCKSIZE bytes from the open disk (identified by ‘disk’)
  and copies the result into a local buffer (must be at least of BLOCKSIZE bytes). 
