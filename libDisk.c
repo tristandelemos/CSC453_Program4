@@ -21,8 +21,8 @@ Errors must be returned for any other failures, as defined by your own error cod
 int openDisk(char *filename, int nBytes){
     int FILE;
     if(nBytes == 0){
-        fd = open(filename, O_RDONLY);
-        if(fd < 0){
+        FILE = open(filename, O_RDONLY);
+        if(FILE < 0){
             printf("Error read only");
         } 
     }
