@@ -8,9 +8,9 @@ CSC 453 Program 4
 #include <stdlib.h>
 #include <stdint.h>
 #include <fcntl.h>
+#include <unistd.h>
 
 int BLOCKSIZE = 256;
-int FILE;
 
 /* This function opens a regular UNIX file and designates the first nBytes of it as space for the emulated disk. 
 nBytes should be a number that is evenly divisible by the block size. 
@@ -20,16 +20,36 @@ and should not be overwritten. There is no requirement to maintain integrity of 
 Errors must be returned for any other failures, as defined by your own error code system.  */
 int openDisk(char *filename, int nBytes){
     int FILE;
+    // check if nBytes is present
     if(nBytes == 0){
-        FILE = open(filename, O_RDONLY);
+        FILE = fopen(filename, "r");
+        // check if fopen was successful
         if(FILE < 0){
-            printf("Error read only");
-            return 1;
+            // return error code -1, error on read only
+            return -1;
         } 
     }
-    if(BLOCKSIZE%nBytes){
-
+    // check if nBytes is evenly divisible
+    else if(BLOCKSIZE%nBytes != 0){
+        // return error code -2, error on block size
+        return -2;
     }
+
+    // check if file exists already
+    if(access(filename, F_OK) != 0){
+        // if file does not exist, create it
+        FILE = fopen(filename, "w+");
+        if(FILE < 0){
+            // return error code -3, error on creating new file
+            return -3;
+        } 
+    }
+    // if file does exist
+    else{
+        FILE = fopen(filename, "r+");
+    }
+
+    return FILE;
 }
 
 /* readBlock() reads an entire block of BLOCKSIZE bytes from the open disk (identified by ‘disk’)
@@ -98,4 +118,6 @@ int writeBlock(int disk, int bNum, void *block) {
 /* closeDisk() takes a disk number ‘disk’ and makes the disk closed to further I/O;
  i.e. any subsequent reads or writes to a closed disk should return an error. 
 Closing a disk should also close the underlying file, committing any writes being buffered by the real OS. */
-void closeDisk(int disk);
+void closeDisk(int disk){
+    close(disk);
+}
