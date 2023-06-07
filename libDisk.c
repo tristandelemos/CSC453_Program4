@@ -14,9 +14,10 @@ and should not be overwritten. There is no requirement to maintain integrity of 
 Errors must be returned for any other failures, as defined by your own error code system.  */
 int openDisk(char *filename, int nBytes){
     int FILE;
+    
     // check if nBytes is present
     if(nBytes == 0){
-        FILE = fopen(filename, "r");
+        FILE = fopen(filename, "r+");
         // check if fopen was successful
         if(FILE < 0){
             // return error code -1, error on read only
@@ -24,11 +25,12 @@ int openDisk(char *filename, int nBytes){
         } 
     }
     // check if nBytes is evenly divisible
-    else if(BLOCKSIZE%nBytes != 0){
+    else if(nBytes%BLOCKSIZE != 0){
         // return error code -2, error on block size
         return -2;
     }
-
+    int size = nBytes/BLOCKSIZE;
+    
     // check if file exists already
     if(access(filename, F_OK) != 0){
         // if file does not exist, create it
@@ -38,10 +40,12 @@ int openDisk(char *filename, int nBytes){
             return -3;
         } 
     }
-    // if file does exist
-    else{
-        FILE = fopen(filename, "r+");
+    
+    int i;
+    for (i = 0; i <= size; i++){
+        writeBlock(FILE, i, NULL);
     }
+    
 
     return FILE;
 }
