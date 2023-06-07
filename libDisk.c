@@ -38,7 +38,32 @@ int openDisk(char *filename, int nBytes){
  The translation from logical to physical block is straightforward: bNum=0 is the very first byte of the file. 
  bNum=1 is BLOCKSIZE bytes into the disk, bNum=n is n*BLOCKSIZE bytes into the disk. On success, it returns 0. 
  Errors must be returned if ‘disk’ is not available (i.e. hasn’t been opened) or for any other failures, as defined by your own error code system. */
-int readBlock(int disk, int bNum, void *block);
+int readBlock(int disk, int bNum, void *block) {
+
+    //block consists of bytes
+    char* buf = block;
+    //set offset
+    off_t offset = bNum * BLOCKSIZE;
+    //seek to block offset
+    off_t seek_val = lseek(disk, offset, SEEK_SET);
+    //error check
+    if (seek_val == -1) {
+        printf("Error with lseek\n");
+        return -1;
+    }
+    //read from disk
+    ssize_t read_size = read(disk, buf, BLOCKSIZE);
+    //error check
+    if (read_size == -1) {
+        printf("Error with read\n");
+        return -1;
+    }
+    //return finished
+    return 0;
+
+
+
+}
 
 /* writeBlock() takes disk number ‘disk’ and logical block number ‘bNum’ and writes the content of the buffer ‘block’ to that location. 
 BLOCKSIZE bytes will be written from ‘block’ regardless of its actual size. The disk must be open. 
