@@ -48,7 +48,7 @@ int readBlock(int disk, int bNum, void *block) {
     off_t seek_val = lseek(disk, offset, SEEK_SET);
     //error check
     if (seek_val == -1) {
-        printf("Error with lseek\n");
+        printf("Error with read lseek\n");
         return -1;
     }
     //read from disk
@@ -70,7 +70,30 @@ BLOCKSIZE bytes will be written from ‘block’ regardless of its actual size. 
 Just as in readBlock(), writeBlock() must translate the logical block bNum to the correct byte position in the file. 
 On success, it returns 0. Errors must be returned if ‘disk’ is not available (i.e. hasn’t been opened) or for any other failures, 
 as defined by your own error code system. */
-int writeBlock(int disk, int bNum, void *block);
+int writeBlock(int disk, int bNum, void *block) {
+
+    //block consists of bytes
+    char* buf = block;
+    //set offset
+    off_t offset = bNum * BLOCKSIZE;
+    //seek to block offset
+    off_t seek_val = lseek(disk, offset, SEEK_SET);
+    //error check
+    if (seek_val == -1) {
+        printf("Error with write lseek\n");
+        return -1;
+    }
+    //write to disk
+    ssize_t write_size = write(disk, buf, BLOCKSIZE);
+    //error check
+    if (write_size == -1) {
+        printf("Error with write\n");
+        return -1;
+    }
+    //return finished
+    return 0;
+
+}
 
 /* closeDisk() takes a disk number ‘disk’ and makes the disk closed to further I/O;
  i.e. any subsequent reads or writes to a closed disk should return an error. 
