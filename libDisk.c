@@ -24,6 +24,7 @@ int openDisk(char *filename, int nBytes){
         FILE = open(filename, O_RDONLY);
         if(FILE < 0){
             printf("Error read only");
+            return 1;
         } 
     }
     if(BLOCKSIZE%nBytes){
