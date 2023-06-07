@@ -7,8 +7,10 @@ CSC 453 Program 4
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <fcntl.h>
 
 int BLOCKSIZE = 256;
+int FILE;
 
 /* This function opens a regular UNIX file and designates the first nBytes of it as space for the emulated disk. 
 nBytes should be a number that is evenly divisible by the block size. 
@@ -17,8 +19,12 @@ and that file’s contents may be overwritten. If nBytes is 0, an existing disk 
 and should not be overwritten. There is no requirement to maintain integrity of any content beyond nBytes. 
 Errors must be returned for any other failures, as defined by your own error code system.  */
 int openDisk(char *filename, int nBytes){
+    int fd;
     if(nBytes == 0){
-        open(filename, flags);
+        fd = open(filename, O_RDONLY);
+        if(fd < 0){
+            printf("Error read only");
+        } 
     }
     if(BLOCKSIZE%nBytes){
 
