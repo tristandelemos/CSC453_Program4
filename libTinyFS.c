@@ -24,7 +24,14 @@ This function should use the emulated disk library to open the specified file, a
 This includes initializing all data to 0x00, setting magic numbers, initializing and writing the superblock and other metadata, etc. 
 Must return a specified success/error code. */
 int tfs_mkfs(char *filename, int nBytes){
-    int disk = openDisk(filename, nBytes);
+    int disk = 0;
+    if (nBytes == 0){
+        disk = openDisk(filename, DEFAULT_DISK_SIZE);
+    }
+    else{
+        disk = openDisk(filename, nBytes);
+    }
+    
     if(disk < 0){
         printf("something is wrong with openDisk.\n");
         return -1;
