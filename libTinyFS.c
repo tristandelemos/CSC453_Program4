@@ -30,14 +30,27 @@ int tfs_mkfs(char *filename, int nBytes){
         return -1;
     } 
     int i;
-    for (i = 0; i < nBytes/BLOCKSIZE; i++){
-        writeBlock(disk, i, 0x00);
+    uint8_t zeros[256];
+    for (i = 0; i <= 256; i++){
+        zeros[i] = 0x00;
+    }
+
+    uint8_t superblock[256];
+    for (i = 0; i <= 256; i++){
+        superblock[i] = 0x00;
         if(i == 0){
             writeBlock(disk, i, 0x5A);
         }
     }
     
+    for (i = 0; i < nBytes/BLOCKSIZE; i++){
+        writeBlock(disk, i, zeros);
+        if(i == 0){
+            writeBlock(disk, i, superblock);
+        }
+    }
     
+    return 0;
     
 }
 
