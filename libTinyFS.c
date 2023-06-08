@@ -4,6 +4,8 @@ CSC 453 Program 4
 
 */
 
+#include "libDisk.h"
+
 /* The default size of the disk and file system block */
 #define BLOCKSIZE 256
 
@@ -21,7 +23,23 @@ typedef int fileDescriptor;
 This function should use the emulated disk library to open the specified file, and upon success, format the file to be mountable. 
 This includes initializing all data to 0x00, setting magic numbers, initializing and writing the superblock and other metadata, etc. 
 Must return a specified success/error code. */
-int tfs_mkfs(char *filename, int nBytes);
+int tfs_mkfs(char *filename, int nBytes){
+    int disk = openDisk(filename, nBytes);
+    if(disk < 0){
+        printf("something is wrong with openDisk.\n");
+        return -1;
+    } 
+    int i;
+    for (i = 0; i < nBytes/BLOCKSIZE; i++){
+        writeBlock(disk, i, 0x00);
+        if(i == 0){
+            writeBlock(disk, i, 0x5A);
+        }
+    }
+    
+    
+    
+}
 
 /* tfs_mount(char *filename) “mounts” a TinyFS file system located within ‘filename’. 
 tfs_unmount(void) “unmounts” the currently mounted file system. 
