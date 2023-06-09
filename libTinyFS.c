@@ -19,6 +19,7 @@ You must be able to support different possible values, or report an error if it 
 typedef int fileDescriptor;
 
 #define SUPERB 0
+#define ROOT 1
 
 /* Makes an empty TinyFS file system of size nBytes on the file specified by ‘filename’. 
 This function should use the emulated disk library to open the specified file, and upon success, format the file to be mountable. 
@@ -117,14 +118,47 @@ and returns a file descriptor (integer) that can be used to reference this file 
 fileDescriptor tfs_open(char *name){
 
     // check if tinyFS is mounted
-    readBlock();
-    if (){
+
+    char* buf = malloc(sizeof(char)*BLOCKSIZE);
+
+    if (readBlock(mounted_disk, SUPERB, buf) != 0) {
+        // disk not open
         return -1;
     }
-    
 
 
     // open the file for reading and writing
+
+    //find file inode from root inode
+
+    int existing = 0;
+    readBlock(mounted_disk, ROOT, buf);
+
+    int j = 0;
+    while (existing == 0 && j < BLOCKSIZE) {
+        if (buf[9] == 0) {
+            break;
+        }
+        int inode_num = buf[j];
+        buf += 1;
+        if (strcmp(name, buf) == 0) {
+            existing = 1;
+            return inode_num;
+        }
+
+        buf += 9;
+        j += 10;
+    }
+
+    //not found
+
+    //make inode
+
+    //update root using j
+
+
+
+
     fileDescriptor file = open(name, O_CREAT |  O_RDWR);
     if(file < 0){
         return  -2;
