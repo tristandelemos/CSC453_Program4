@@ -18,6 +18,7 @@ You must be able to support different possible values, or report an error if it 
 #define DEFAULT_DISK_NAME “tinyFSDisk” 	
 typedef int fileDescriptor;
 
+#define SUPERB 0
 
 /* Makes an empty TinyFS file system of size nBytes on the file specified by ‘filename’. 
 This function should use the emulated disk library to open the specified file, and upon success, format the file to be mountable. 
@@ -66,8 +67,46 @@ tfs_unmount(void) “unmounts” the currently mounted file system.
 As part of the mount operation, tfs_mount should verify the file system is the correct type. 
 Only one file system may be mounted at a time. Use tfs_unmount to cleanly unmount the currently mounted file system. 
 Must return a specified success/error code. */
-int tfs_mount(char *filename);
-int tfs_unmount(void);
+
+int mounted_disk = -1;
+
+int tfs_mount(char *filename) {
+
+
+    mounted_disk = openDisk(filename, 0);
+
+    char* buf = malloc(sizeof(char)*BLOCKSIZE);
+
+    int rd = readBlock(mounted_disk, SUPERB, buf);
+
+    if (buf[0] == 0x5A) {
+        buf[3] = 0xFF;
+
+        int w = writeBlock(mounted_disk, SUPERB, buf);
+
+        return 0;
+    }
+
+    return -1;
+
+    
+
+
+}
+int tfs_unmount(void) {
+
+    char* buf = malloc(sizeof(char)*BLOCKSIZE);
+
+    int rd = readBlock(mounted_disk, SUPERB, buf);
+
+    buf[3] = 0x00;
+
+    int w = writeBlock(mounted_disk, SUPERB, buf);
+
+    closeDisk(mounted_disk);
+
+
+}
 
 /* Opens a file for reading and writing on the currently mounted file system. 
 Creates a dynamic resource table entry for the file (the structure that tracks open files, the internal file pointer, etc.), 
