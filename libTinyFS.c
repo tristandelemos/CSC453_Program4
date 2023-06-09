@@ -50,6 +50,7 @@ int tfs_mkfs(char *filename, int nBytes){
             writeBlock(disk, i, 0x5A);
         }
     }
+    // add special inode block for root
     
     for (i = 0; i < nBytes/BLOCKSIZE; i++){
         writeBlock(disk, i, zeros);
@@ -57,7 +58,9 @@ int tfs_mkfs(char *filename, int nBytes){
             writeBlock(disk, i, superblock);
         }
     }
-    
+
+    closeDisk(disk);
+
     return 0;
     
 }
@@ -111,10 +114,48 @@ int tfs_unmount(void) {
 /* Opens a file for reading and writing on the currently mounted file system. 
 Creates a dynamic resource table entry for the file (the structure that tracks open files, the internal file pointer, etc.), 
 and returns a file descriptor (integer) that can be used to reference this file while the filesystem is mounted. */
-fileDescriptor tfs_open(char *name);
+fileDescriptor tfs_open(char *name){
+
+    // check if tinyFS is mounted
+    readBlock();
+    if (){
+        return -1;
+    }
+    
+
+
+    // open the file for reading and writing
+    fileDescriptor file = open(name, O_CREAT |  O_RDWR);
+    if(file < 0){
+        return  -2;
+    }
+
+    // add inode block to tinyFS
+    uint8_t inode[256];
+
+    // add data blocks to tinyFS if any are 
+    uint8_t data [256];
+    
+
+    // return filedescriptor
+    return file;
+}
+
+
 
 /* Closes the file and removes dynamic resource table entry */
-int tfs_close(fileDescriptor FD);
+int tfs_close(fileDescriptor FD){
+    // check if tinyFS is mounted
+
+    // close the file
+
+    // remove data blocks from tinyFS
+
+    // remove inode block from tinyFS
+
+    return 0;
+}
+
 
 
 /* Writes buffer ‘buffer’ of size ‘size’, which represents an entire file’s contents, to the file described by ‘FD’.
