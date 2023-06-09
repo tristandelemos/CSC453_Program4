@@ -21,6 +21,8 @@ typedef int fileDescriptor;
 #define SUPERB 0
 #define ROOT 1
 
+#define BLOCK_ALLOC sizeof(char)*BLOCKSIZE
+
 /* Makes an empty TinyFS file system of size nBytes on the file specified by ‘filename’. 
 This function should use the emulated disk library to open the specified file, and upon success, format the file to be mountable. 
 This includes initializing all data to 0x00, setting magic numbers, initializing and writing the superblock and other metadata, etc. 
@@ -79,12 +81,12 @@ int tfs_mount(char *filename) {
 
     mounted_disk = openDisk(filename, 0);
 
-    char* buf = malloc(sizeof(char)*BLOCKSIZE);
+    char* buf = malloc(BLOCK_ALLOC);
 
     int rd = readBlock(mounted_disk, SUPERB, buf);
 
     if (buf[0] == 0x5A) {
-        buf[3] = 0xFF;
+        buf[4] = 0xFF;
 
         int w = writeBlock(mounted_disk, SUPERB, buf);
 
@@ -99,11 +101,11 @@ int tfs_mount(char *filename) {
 }
 int tfs_unmount(void) {
 
-    char* buf = malloc(sizeof(char)*BLOCKSIZE);
+    char* buf = malloc(BLOCK_ALLOC);
 
     int rd = readBlock(mounted_disk, SUPERB, buf);
 
-    buf[3] = 0x00;
+    buf[4] = 0x00;
 
     int w = writeBlock(mounted_disk, SUPERB, buf);
 
@@ -119,7 +121,7 @@ fileDescriptor tfs_open(char *name){
 
     // check if tinyFS is mounted
 
-    char* buf = malloc(sizeof(char)*BLOCKSIZE);
+    char* buf = malloc(BLOCK_ALLOC);
 
     if (readBlock(mounted_disk, SUPERB, buf) != 0) {
         // disk not open
@@ -159,6 +161,8 @@ fileDescriptor tfs_open(char *name){
 
 
 
+
+
     fileDescriptor file = open(name, O_CREAT |  O_RDWR);
     if(file < 0){
         return  -2;
@@ -173,6 +177,107 @@ fileDescriptor tfs_open(char *name){
 
     // return filedescriptor
     return file;
+}
+
+
+
+int makeInode(int bNum, uint8_t* buf) {
+
+    int i = 0;
+
+    int unknown = 0;
+
+    //inode identifier
+    buf[0] = 0xCC;
+    buf[1] = 0xCC;
+    buf[2] = 0xCC;
+    buf[3] = 0xCC;
+
+    //inode number
+    buf[4] = bNum;
+
+    //mode
+    buf[5] = unknown;
+    buf[6] = unknown;
+    buf[7] = unknown;
+    buf[8] = unknown;
+
+    //uid
+    buf[9] = unknown;
+    buf[10] = unknown;
+    buf[11] = unknown;
+    buf[12] = unknown;
+
+    //gid
+    buf[13] = unknown;
+    buf[14] = unknown;
+    buf[15] = unknown;
+    buf[16] = unknown;
+
+    //permissions
+    //base 777
+    buf[17] = 0x03;
+    buf[18] = 0x09;
+
+    //size
+    buf[19] = 0;
+    buf[20] = 0;
+
+    //access time
+    buf[21] = unknown;
+    buf[22] = unknown;
+    buf[23] = unknown;
+    buf[24] = unknown;
+
+    //modified time
+    buf[25] = unknown;
+    buf[26] = unknown;
+    buf[27] = unknown;
+    buf[28] = unknown;
+
+    //data pointer
+    buf[29] = unknown;
+
+    //num_blocks
+    buf[30] = unknown;
+
+    //ending null
+    buf[31] = '\0';
+
+}
+
+
+
+int overwriteFreeBlock(int bNum, void* data) {
+
+    char* buf = malloc(BLOCK_ALLOC);
+    //seek to free block
+    int rd = readBlock(mounted_disk, bNum, buf);
+
+    //take next free block info, write to superblock
+    int next_free = buf[0];
+    updateBlock(SUPERB, 2, next_free);
+
+    //write data to block
+    int w = writeBlock(mounted_disk, bNum, data);
+
+    return 0;
+    
+}
+
+int updateBlock(int bNum, int byte, char data) {
+    
+    char* buf = malloc(BLOCK_ALLOC);
+
+    int rd = readBlock(mounted_disk, SUPERB, buf);
+
+    //change byte
+    buf[byte] = data;
+
+    int w = writeBlock(mounted_disk, SUPERB, buf);
+
+    return 0;
+
 }
 
 
