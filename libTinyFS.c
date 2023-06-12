@@ -94,37 +94,41 @@ int mounted_disk = -1;
 
 int tfs_mount(char *filename) {
 
-
+    //set global fd for disk
     mounted_disk = openDisk(filename, 0);
-
+    //buffer
     char* buf = malloc(BLOCK_ALLOC);
-
+    //read superblock
     int rd = readBlock(mounted_disk, SUPERB, buf);
-
+    //verify TinyFS compatible
     if (buf[0] == 0x5A) {
+        //fill mounted byte
         buf[4] = 0xFF;
-
+        //write to superblock
         int w = writeBlock(mounted_disk, SUPERB, buf);
-
+        //free buf
+        free(buf);
+        //return
         return 0;
     }
-
+    //error return
     return -1;
-
-    
 
 
 }
 int tfs_unmount(void) {
 
+    //buffer
     char* buf = malloc(BLOCK_ALLOC);
-
+    //read superblock
     int rd = readBlock(mounted_disk, SUPERB, buf);
-
+    //set mounted byte to 0
     buf[4] = 0x00;
-
+    //write to superblock
     int w = writeBlock(mounted_disk, SUPERB, buf);
-
+    //free buf
+    free(buf);
+    //close disk
     closeDisk(mounted_disk);
 
 
@@ -136,18 +140,20 @@ and returns a file descriptor (integer) that can be used to reference this file 
 fileDescriptor tfs_open(char *name){
 
     // check if tinyFS is mounted
-
+    //buffer
     char* buf = malloc(BLOCK_ALLOC);
 
     if (readBlock(mounted_disk, SUPERB, buf) != 0) {
         // disk not open
+        free(buf);
         return -1;
     }
 
-
     int existing = 0;
+    //read root
     readBlock(mounted_disk, ROOT, buf);
 
+    //look for inode in root
     int j = 0;
     while (existing == 0 && j < BLOCKSIZE) {
         if (buf[9] == 0) {
@@ -157,6 +163,7 @@ fileDescriptor tfs_open(char *name){
         buf += 1;
         if (strcmp(name, buf) == 0) {
             existing = 1;
+            free(buf);
             return inode_num;
         }
 
@@ -166,11 +173,13 @@ fileDescriptor tfs_open(char *name){
 
     //not found
 
-    //make inode
-
     //get next free block for inode block
     int inode_bNum = getFreeBlock();
     //make inode
+    int i = 0;
+    for (i=0; i<BLOCKSIZE; i++) {
+        buf[i] = 0;
+    }
     buf = makeInode(inode_bNum, buf);
     //fill block, get next free, updates superblock
     int over = overwriteFreeBlock(inode_bNum, buf);
@@ -181,7 +190,6 @@ fileDescriptor tfs_open(char *name){
 
 
     // add dynamic resource table entry
-    int i;
     for (i = 0; i < DEFAULT_DISK_SIZE/BLOCKSIZE; i++){
         if(resource_table[i][0] == NULL){
             resource_table[i][0] = inode_bNum;
@@ -190,6 +198,8 @@ fileDescriptor tfs_open(char *name){
             break;
         }
     }
+
+    free(buf);
 
     // return filedescriptor
     return inode_bNum;
@@ -264,14 +274,18 @@ int makeInode(int bNum, uint8_t* buf) {
 
 int addInodeToRoot(int bNum, char* name) {
 
+    //buffer
     uint8_t* buf = malloc(BLOCKSIZE);
+    //read root inode
     buf = readBlock(mounted_disk, ROOT, buf);
-
+    //seek to end of existing inodes
     int i = 0;
     while (buf[i+9] == '\0') {
         i += 10;
     }
+    //set inode number in root
     buf[i] = bNum;
+    //fill root with first 8 of name
     i += 1;
     int j = 0;
     for (j=0; j<8; j++) {
@@ -281,10 +295,13 @@ int addInodeToRoot(int bNum, char* name) {
             buf[i+j] = '\0';
         }
     }
+    //append final null
     buf[i+8] = '\0';
-
+    //rewrite root node
     int rd = writeBlock(mounted_disk, ROOT, buf);
-
+    //free buf
+    free(buf);
+    //return
     return 0;
 
 }
@@ -292,48 +309,50 @@ int addInodeToRoot(int bNum, char* name) {
 
 int overwriteFreeBlock(int bNum, void* data) {
 
+    //buffer
     char* buf = malloc(BLOCK_ALLOC);
     //seek to free block
     int rd = readBlock(mounted_disk, bNum, buf);
-
     //take next free block info, write to superblock
     int next_free = buf[0];
     updateBlock(SUPERB, 2, next_free);
-
     //write data to block
     int w = writeBlock(mounted_disk, bNum, data);
-
+    //free buffer
+    free(buf);
+    //return
     return 0;
     
 }
 
 int updateBlock(int bNum, int byte, char data) {
     
+    //buffer
     char* buf = malloc(BLOCK_ALLOC);
-
+    //read in block
     int rd = readBlock(mounted_disk, bNum, buf);
-
-    //change byte
+    //change byte in block
     buf[byte] = data;
-
+    //rewrite block
     int w = writeBlock(mounted_disk, bNum, buf);
-
+    //free buffer
     free(buf);
-
+    //return
     return 0;
 
 }
 
 int getFreeBlock() {
 
+    //buffer
     char* buf = malloc(BLOCK_ALLOC);
-
+    //read in supernode
     int rd = readBlock(mounted_disk, SUPERB, buf);
-
+    //read next free block
     int next_free = buf[2];
-
+    //free buffer
     free(buf);
-
+    //return
     return next_free;
 
 }
@@ -401,6 +420,7 @@ int tfs_delete(fileDescriptor FD){
 
     int j = 29;
     int k = 0;
+    //read through list of fragmented data portions in inode
     while (buf[j] != 0) {
         data_blocks[k] = buf[j];
         num_connected[k] = buf[j+1];
