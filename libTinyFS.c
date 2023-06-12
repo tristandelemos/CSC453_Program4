@@ -332,21 +332,12 @@ int getFreeBlock() {
 
 /* Closes the file and removes dynamic resource table entry */
 int tfs_close(fileDescriptor FD){
-    uint8_t inode_num;
-    // check if tinyFS is mounted
-
-    // remove data blocks from tinyFS
-
-    // remove inode block from tinyFS
-
-    // save inode number for removing from dynamic resource table
-
     // remove from dynamic resource table
     int i;
     for (i = 0; i < sizeof(resource_table); i++){
         uint8_t * entry = resource_table[i];
         // if the inode numbers are the same, set everything in table to NULL
-        if(inode_num == entry[0]){
+        if(FD == entry[0]){
             entry[0] = '/0';
             entry[1] = '/0';
             entry[2] = '/0';
@@ -360,10 +351,38 @@ int tfs_close(fileDescriptor FD){
 
 /* Writes buffer ‘buffer’ of size ‘size’, which represents an entire file’s contents, to the file described by ‘FD’.
  Sets the file pointer to 0 (the start of file) when done. Returns success/error codes. */
-int tfs_write(fileDescriptor FD, char *buffer, int size);
+int tfs_write(fileDescriptor FD, char *buffer, int size){
+    int i;
+    uint8_t data_block_num; 
+    uint8_t * offset;
+    for (i = 0; i < sizeof(resource_table); i++){
+        uint8_t * entry = resource_table[i];
+        // if the inode numbers are the same, get data block num and byte offset
+        if(FD == entry[0]){
+            data_block_num = entry[1]; 
+            offset = entry[2];
+        }
+
+        
+    }
+
+    int writeBlock(mounted_disk, data_block_num, buffer);
+
+}
+
 
 /* deletes a file and marks its blocks as free on disk. */
-int tfs_delete(fileDescriptor FD);
+int tfs_delete(fileDescriptor FD){
+
+// check if tinyFS is mounted
+
+    // remove data blocks from tinyFS
+
+    // remove inode block from tinyFS
+
+    // save inode number for removing from dynamic resource table
+    return 0;
+}
 
 /* reads one byte from the file and copies it to ‘buffer’, using the current file pointer location and incrementing it by one upon success. 
 If the file pointer is already at the end of the file then tfs_readByte() should return an error and not increment the file pointer. */

@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <string.h>
 
 int BLOCKSIZE = 256;
 
