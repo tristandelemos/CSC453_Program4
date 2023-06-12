@@ -24,7 +24,7 @@ typedef int fileDescriptor;
 #define BLOCK_ALLOC sizeof(char)*BLOCKSIZE
 
 // dynamic resource table
-uint8_t * resource_table;
+uint8_t ** resource_table;
 
 
 /* Makes an empty TinyFS file system of size nBytes on the file specified by ‘filename’. 
@@ -48,9 +48,12 @@ int tfs_mkfs(char *filename, int nBytes){
     // malloc memory for dynamic resource table
     resource_table = malloc(DEFAULT_DISK_SIZE/BLOCKSIZE);
     int i;
-    // malloc memory for each entry in table
+    // malloc memory for each entry in table and set each entry to NULL
     for ( i = 0; i < DEFAULT_DISK_SIZE/BLOCKSIZE; i++){
         resource_table[i] = malloc(sizeof(uint8_t) * 3);
+        resource_table[i][0] = '/0';
+        resource_table[i][1] = '/0';
+        resource_table[i][2] = '/0';
     }
     
     
@@ -142,10 +145,6 @@ fileDescriptor tfs_open(char *name){
     }
 
 
-    // open the file for reading and writing
-
-    //find file inode from root inode
-
     int existing = 0;
     readBlock(mounted_disk, ROOT, buf);
 
@@ -179,7 +178,18 @@ fileDescriptor tfs_open(char *name){
 
     //update root using j
     int inode_rooted = addInodeToRoot(inode_bNum, name);
-    
+
+
+    // add dynamic resource table entry
+    int i;
+    for (i = 0; i < DEFAULT_DISK_SIZE/BLOCKSIZE; i++){
+        if(resource_table[i][0] == NULL){
+            resource_table[i][0] = inode_bNum;
+            resource_table[i][1] = buf[29];
+            resource_table[i][2] = 0;
+            break;
+        }
+    }
 
     // return filedescriptor
     return inode_bNum;
@@ -362,11 +372,12 @@ int tfs_write(fileDescriptor FD, char *buffer, int size){
             data_block_num = entry[1]; 
             offset = entry[2];
         }
-
-        
+   
     }
 
-    int writeBlock(mounted_disk, data_block_num, buffer);
+    // based on 
+
+     writeBlock(mounted_disk, data_block_num, buffer);
 
 }
 
@@ -374,7 +385,7 @@ int tfs_write(fileDescriptor FD, char *buffer, int size){
 /* deletes a file and marks its blocks as free on disk. */
 int tfs_delete(fileDescriptor FD){
 
-// check if tinyFS is mounted
+    // check if tinyFS is mounted
 
     // remove data blocks from tinyFS
 
@@ -386,8 +397,67 @@ int tfs_delete(fileDescriptor FD){
 
 /* reads one byte from the file and copies it to ‘buffer’, using the current file pointer location and incrementing it by one upon success. 
 If the file pointer is already at the end of the file then tfs_readByte() should return an error and not increment the file pointer. */
-int tfs_readByte(fileDescriptor FD, char *buffer);
+int tfs_readByte(fileDescriptor FD, char *buffer){
+    int i;
+    uint8_t data_block_num = 0; 
+    uint8_t offset = 0;
+    // search through resource table for same file descriptor numbers
+    for (i = 0; i < sizeof(resource_table); i++){
+        uint8_t * entry = resource_table[i];
+        // if the inode numbers are the same, get data block num and byte offset
+        if(FD == entry[0]){
+            data_block_num = entry[1]; 
+            offset = entry[2];
+            // return error if past 256,  have to change this later
+            if(offset > 256){
+                // find what data block we should be at
+                int next_data_block = (offset / 256) + 29;
+
+                // read in inode block to find where that next data block should be
+                uint8_t * block;
+                readBlock(mounted_disk, entry[0], block);
+
+                // if we are trying to read past the end of the file
+                if(block[next_data_block] == 0){
+                    printf("EOF error in tfs_readByte.\n");
+                    return -1;
+                }
+
+                // else, set correct data block number
+                data_block_num = block[next_data_block];
+            }
+        }
+    }
+    // if data block is still 0, then we did not find the file in the resource table
+    if(data_block_num == 0){
+        printf("File not found when reading byte.\n");
+        return -1;
+    }
+    // read in specified block
+    uint8_t * block;
+    readBlock(mounted_disk, data_block_num, block);
+
+    // copy specified byte to return buffer and increase offset
+    strcpy(buffer, block[offset++]);
+    
+    return 0;
+}
 
 /* change the file pointer location to offset (absolute). Returns success/error codes.*/
-int tfs_seek(fileDescriptor FD, int offset);
+int tfs_seek(fileDescriptor FD, int offset){
+    int i;
+    uint8_t data_block_num = 0; 
+    uint8_t offset = 0;
+    // search through resource table for same file descriptor numbers
+    for (i = 0; i < sizeof(resource_table); i++){
+        uint8_t * entry = resource_table[i];
+        // if the inode numbers are the same, get set new offset
+        if(FD == entry[0]){
+            entry[2] = offset;
+            return 0;
+        }
+    }
+    printf("Error could not find file in resource table in tfs_seek.\n");
+    return -1;
+}
 
