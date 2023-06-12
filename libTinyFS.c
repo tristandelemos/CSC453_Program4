@@ -301,12 +301,12 @@ int updateBlock(int bNum, int byte, char data) {
     
     char* buf = malloc(BLOCK_ALLOC);
 
-    int rd = readBlock(mounted_disk, SUPERB, buf);
+    int rd = readBlock(mounted_disk, bNum, buf);
 
     //change byte
     buf[byte] = data;
 
-    int w = writeBlock(mounted_disk, SUPERB, buf);
+    int w = writeBlock(mounted_disk, bNum, buf);
 
     free(buf);
 
@@ -377,12 +377,60 @@ int tfs_delete(fileDescriptor FD){
 // check if tinyFS is mounted
 
     // remove data blocks from tinyFS
+    //check inode for associated blocks
+    int data_blocks[40] = malloc(sizeof(int)*40);
+    int num_connected[40] = malloc(sizeof(int)*40);
+    int i = 0;
+    for (i=0; i<40; i++) {
+        data_blocks[i] = -1;
+        num_connected[i] = -1;
+    }
+    uint8_t* buf = malloc(BLOCK_ALLOC);
+    int rd = readBlock(mounted_disk, FD, buf);
+
+    int j = 29;
+    int k = 0;
+    while (buf[j] != 0) {
+        data_blocks[k] = buf[j];
+        num_connected[k] = buf[j+1];
+        k += 1;
+        j += 2;
+    }
+
+    
 
     // remove inode block from tinyFS
 
     // save inode number for removing from dynamic resource table
     return 0;
 }
+
+int deleteBlock(int bNum) {
+
+    //make empty block
+    uint8_t* buf = malloc(BLOCK_ALLOC);
+    int i = 0;
+    for (i=0; i<256; i++) {
+        buf[i] = 0;
+    }
+
+    //overwrite block with empty block
+    int w = writeBlock(mounted_disk, bNum, buf);
+
+    //connect last free block to here
+    uint8_t* superb = malloc(BLOCK_ALLOC);
+    int rd = readBlock(mounted_disk, SUPERB, superb);
+    int prev_last = superb[3];
+    buf[0] = bNum;
+    w = writeBlock(mounted_disk, prev_last, buf);
+
+    //this is now last free block
+    updateBlock(SUPERB, 3, bNum);
+
+    return 0;
+
+}
+
 
 /* reads one byte from the file and copies it to ‘buffer’, using the current file pointer location and incrementing it by one upon success. 
 If the file pointer is already at the end of the file then tfs_readByte() should return an error and not increment the file pointer. */
