@@ -156,6 +156,14 @@ fileDescriptor tfs_open(char *name){
 
     //make inode
 
+    //get next free block for inode block
+    int inode_bNum = getFreeBlock();
+    //make inode
+    buf = makeInode(inode_bNum, buf);
+    //fill block, get next free, updates superblock
+    int over = overwriteFreeBlock(inode_bNum, buf);
+    
+
     //update root using j
 
 
@@ -246,6 +254,16 @@ int makeInode(int bNum, uint8_t* buf) {
 
 }
 
+int addInodeToRoot(int bNum, char* name) {
+
+    uint8_t* buf = malloc(BLOCKSIZE);
+    int i = 0;
+    while (buf[i+9] == '\0') {
+        i += 10;
+    }
+    buf[i] = bNum;
+
+}
 
 
 int overwriteFreeBlock(int bNum, void* data) {
@@ -276,7 +294,23 @@ int updateBlock(int bNum, int byte, char data) {
 
     int w = writeBlock(mounted_disk, SUPERB, buf);
 
+    free(buf);
+
     return 0;
+
+}
+
+int getFreeBlock() {
+
+    char* buf = malloc(BLOCK_ALLOC);
+
+    int rd = readBlock(mounted_disk, SUPERB, buf);
+
+    int next_free = buf[2];
+
+    free(buf);
+
+    return next_free;
 
 }
 
