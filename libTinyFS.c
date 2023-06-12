@@ -23,6 +23,10 @@ typedef int fileDescriptor;
 
 #define BLOCK_ALLOC sizeof(char)*BLOCKSIZE
 
+// dynamic resource table
+uint8_t * resource_table;
+
+
 /* Makes an empty TinyFS file system of size nBytes on the file specified by ‘filename’. 
 This function should use the emulated disk library to open the specified file, and upon success, format the file to be mountable. 
 This includes initializing all data to 0x00, setting magic numbers, initializing and writing the superblock and other metadata, etc. 
@@ -40,7 +44,16 @@ int tfs_mkfs(char *filename, int nBytes){
         printf("something is wrong with openDisk.\n");
         return -1;
     } 
+
+    // malloc memory for dynamic resource table
+    resource_table = malloc(DEFAULT_DISK_SIZE/BLOCKSIZE);
     int i;
+    // malloc memory for each entry in table
+    for ( i = 0; i < DEFAULT_DISK_SIZE/BLOCKSIZE; i++){
+        resource_table[i] = malloc(sizeof(uint8_t) * 3);
+    }
+    
+    
     uint8_t zeros[256];
     for (i = 0; i <= 256; i++){
         zeros[i] = 0x00;
