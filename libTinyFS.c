@@ -297,13 +297,26 @@ int updateBlock(int bNum, int byte, char data) {
 
 /* Closes the file and removes dynamic resource table entry */
 int tfs_close(fileDescriptor FD){
+    uint8_t inode_num;
     // check if tinyFS is mounted
-
-    // close the file
 
     // remove data blocks from tinyFS
 
     // remove inode block from tinyFS
+
+    // save inode number for removing from dynamic resource table
+
+    // remove from dynamic resource table
+    int i;
+    for (i = 0; i < sizeof(resource_table); i++){
+        uint8_t * entry = resource_table[i];
+        // if the inode numbers are the same, set everything in table to NULL
+        if(inode_num == entry[0]){
+            entry[0] = '/0';
+            entry[1] = '/0';
+            entry[2] = '/0';
+        }
+    }
 
     return 0;
 }
