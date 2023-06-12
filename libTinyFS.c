@@ -397,9 +397,19 @@ int tfs_delete(fileDescriptor FD){
         j += 2;
     }
 
-    
+    i = 0;
+    while(data_blocks[i] != -1) {
+        
+        //for every run of data, delete each block
+        for (j=0; j<num_connected[i]; j++) {
+            deleteBlock(data_blocks[i]+j);
+        }
+    i++;
+
+    }
 
     // remove inode block from tinyFS
+    deleteBlock(FD);
 
     // save inode number for removing from dynamic resource table
     return 0;
