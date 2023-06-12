@@ -178,26 +178,11 @@ fileDescriptor tfs_open(char *name){
     
 
     //update root using j
-
-
-
-
-
-
-    fileDescriptor file = open(name, O_CREAT |  O_RDWR);
-    if(file < 0){
-        return  -2;
-    }
-
-    // add inode block to tinyFS
-    uint8_t inode[256];
-
-    // add data blocks to tinyFS if any are 
-    uint8_t data [256];
+    int inode_rooted = addInodeToRoot(inode_bNum, name);
     
 
     // return filedescriptor
-    return file;
+    return inode_bNum;
 }
 
 
@@ -270,11 +255,27 @@ int makeInode(int bNum, uint8_t* buf) {
 int addInodeToRoot(int bNum, char* name) {
 
     uint8_t* buf = malloc(BLOCKSIZE);
+    buf = readBlock(mounted_disk, ROOT, buf);
+
     int i = 0;
     while (buf[i+9] == '\0') {
         i += 10;
     }
     buf[i] = bNum;
+    i += 1;
+    int j = 0;
+    for (j=0; j<8; j++) {
+        if (length(name) >= j) {
+            buf[i+j] = name[j];
+        } else {
+            buf[i+j] = '\0';
+        }
+    }
+    buf[i+8] = '\0';
+
+    int rd = writeBlock(mounted_disk, ROOT, buf);
+
+    return 0;
 
 }
 
