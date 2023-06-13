@@ -613,7 +613,7 @@ int tfs_rename(fileDescriptor FD, char * new_name) {
     }
     
     // read in root inode
-    char * root;
+    char * root = malloc(BLOCK_ALLOC);
     readBlock(mounted_disk, ROOT, root);
     int inode_num = 0;
     char name[9];
@@ -629,6 +629,7 @@ int tfs_rename(fileDescriptor FD, char * new_name) {
             //return
             return 0;
         }
+        inode_num += 10;
     }
     // if we have exited the while loop, then the given file descriptor is not in the root block
     printf("Given file descriptor is not in root node.\n");
@@ -638,12 +639,12 @@ int tfs_rename(fileDescriptor FD, char * new_name) {
 /* lists all the files and directories on the disk */
 int tfs_readdir(){
     // read in root inode
-    char * root;
+    char * root = malloc(BLOCK_ALLOC);
     readBlock(mounted_disk, ROOT, root);
     int inode_num = 0;
     char name[9];
     int index = 1;
-    while(isdigit(root[inode_num]) != 0){
+    while(root[inode_num] != 0){
         while (root[index] != NULL){
             strcat(name, root[index]);
             index++;
@@ -654,6 +655,11 @@ int tfs_readdir(){
         // set indexes to next name in root inode
         inode_num = inode_num + 10;
         index = inode_num + 1;
+        //reset name
+        int i = 0;
+        for (i=0; i<9; i++) {
+            name[i] = '\0';
+        }
     }
     return 0;
     
