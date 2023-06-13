@@ -383,22 +383,38 @@ int tfs_close(fileDescriptor FD){
 /* Writes buffer ‘buffer’ of size ‘size’, which represents an entire file’s contents, to the file described by ‘FD’.
  Sets the file pointer to 0 (the start of file) when done. Returns success/error codes. */
 int tfs_write(fileDescriptor FD, char *buffer, int size){
-    int i;
-    uint8_t data_block_num; 
-    uint8_t * offset;
-    for (i = 0; i < sizeof(resource_table); i++){
-        uint8_t * entry = resource_table[i];
-        // if the inode numbers are the same, get data block num and byte offset
-        if(FD == entry[0]){
-            data_block_num = entry[1]; 
-            offset = entry[2];
+    
+    //for potential future for loops
+    int i = 0;
+
+    //check if valid fd
+
+    //check if FD has data
+    uint8_t* buf = malloc(BLOCK_ALLOC);
+    //read FD inode
+    int rd = readBlock(mounted_disk, FD, buf);
+    if (buf[29] == 0) {
+        //if it has data, delete it all
+        int data_blocks[40];
+        int j = 29;
+        int k = 0;
+        while (buf[j] != 0) {
+            for (i=0; i<buf[j+1]; i++) {
+                data_blocks[k] = j+k;
+                k++;
+            }
         }
-   
+
     }
 
-    // based on 
+    
 
-     writeBlock(mounted_disk, data_block_num, buffer);
+    //write new data
+
+
+
+
+
 
 }
 
