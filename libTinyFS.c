@@ -567,7 +567,7 @@ int tfs_readByte(fileDescriptor FD, char *buffer){
                         }
                     }
                 }
-                
+
                 data_block_num = inode[next-1] + current_data_chunk_block;
             }
         }
@@ -604,4 +604,60 @@ int tfs_seek(fileDescriptor FD, int offset){
     printf("Error could not find file in resource table in tfs_seek.\n");
     return -1;
 }
+
+/* Renames a file.  New name should be passed in. */
+int tfs_rename(fileDescriptor FD, char * new_name) {
+    if (strlen(new_name) > 8){
+        printf("New Name is too long, must be 8 characters or less.\n");
+        return -1;
+    }
+    
+    // read in root inode
+    char * root;
+    readBlock(mounted_disk, ROOT, root);
+    int inode_num = 0;
+    char name[9];
+    int index = 1;
+    // go through inode block to find given file descriptor
+    while(isdigit(root[inode_num]) != 0){
+        //if FD and inode_num are same, we found correct file
+        if (root[inode_num] == FD){
+            //change byte in block
+            root[inode_num + 1] = name;
+            //rewrite block
+            int w = writeBlock(mounted_disk, ROOT, root);
+            //return
+            return 0;
+        }
+    }
+    // if we have exited the while loop, then the given file descriptor is not in the root block
+    printf("Given file descriptor is not in root node.\n");
+    return 0;
+}
+
+/* lists all the files and directories on the disk */
+int tfs_readdir(){
+    // read in root inode
+    char * root;
+    readBlock(mounted_disk, ROOT, root);
+    int inode_num = 0;
+    char name[9];
+    int index = 1;
+    while(isdigit(root[inode_num]) != 0){
+        while (root[index] != NULL){
+            strcat(name, root[index]);
+            index++;
+        }
+        // print completed name
+        printf("File Descriptor: %d, File Name: %s\n", root[inode_num], name);
+        
+        // set indexes to next name in root inode
+        inode_num = inode_num + 10;
+        index = inode_num + 1;
+    }
+    return 0;
+    
+}
+ 
+
 
