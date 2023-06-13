@@ -5,18 +5,14 @@ CSC 453 Program 4
 */
 
 #include "libDisk.h"
+#include "libTinyFS.h"
 
-/* The default size of the disk and file system block */
-#define BLOCKSIZE 256
+
 
 /* Your program should use a 10240 byte disk size giving you 40 blocks total. 
 This is the default size. 
 You must be able to support different possible values, or report an error if it exceeds the limits of your implementation. */
 #define DEFAULT_DISK_SIZE 10240 
-
-/* use this name for a default disk file name */
-#define DEFAULT_DISK_NAME “tinyFSDisk” 	
-typedef int fileDescriptor;
 
 #define SUPERB 0
 #define ROOT 1
