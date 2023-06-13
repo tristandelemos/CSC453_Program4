@@ -389,28 +389,66 @@ int tfs_write(fileDescriptor FD, char *buffer, int size){
 
     //check if valid fd
 
-    //check if FD has data
-    uint8_t* buf = malloc(BLOCK_ALLOC);
-    //read FD inode
-    int rd = readBlock(mounted_disk, FD, buf);
-    if (buf[29] == 0) {
-        //if it has data, delete it all
-        int data_blocks[40];
-        int j = 29;
-        int k = 0;
-        while (buf[j] != 0) {
-            for (i=0; i<buf[j+1]; i++) {
-                data_blocks[k] = j+k;
-                k++;
-            }
-        }
 
+
+    //check if FD has data
+    uint8_t* inode = malloc(BLOCK_ALLOC);
+    //read FD inode
+    int rd = readBlock(mounted_disk, FD, inode);
+
+    int ptr = 29;
+    while (inode[ptr] != 0) {
+        //for each pointer, remove associated data
+        for (i=0; i<inode[ptr+1]; i++) {
+            //each i is offset into "pointer"
+            deleteBlock(inode[ptr]+i);
+        }
+        //increase to next ptr fragment
+        ptr += 2;
     }
 
-    
+    //remake inode
+    inode = makeInode(FD, inode);
+    //fill block, get next free, updates superblock
+    int over = overwriteFreeBlock(FD, inode);
+
 
     //write new data
 
+    uint8_t* buf = malloc(BLOCK_ALLOC);
+
+    int bytes_written = 0;
+    int prev_free = -1;
+    int next_free = -1;
+
+    int cur_ptr = 27;
+
+    while (bytes_written < size) {
+
+        prev_free = next_free;
+        next_free = getFreeBlock();
+        //if next_free isn't immediately next
+        if (abs(next_free - prev_free) > 1) {
+            //add new fragment to inode
+            cur_ptr += 2;
+            inode[cur_ptr] = next_free;
+            inode[cur_ptr+1] = 1;
+        } else {
+            //increase num blocks in fragment
+            inode[cur_ptr+1]++;
+        }
+
+        //write data to next block
+        for (i=0; i<BLOCKSIZE; i++) {
+            buf[i] = buffer[i];
+        }
+        buffer += BLOCKSIZE;
+        over = overwriteFreeBlock(next_free, buf);
+        bytes_written += BLOCKSIZE;
+
+    }
+
+    return 0;
 
 
 
