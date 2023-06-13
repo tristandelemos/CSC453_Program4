@@ -529,6 +529,7 @@ int tfs_readByte(fileDescriptor FD, char *buffer){
                         }
                     }
                 }
+                
                 data_block_num = inode[next-1] + current_data_chunk_block;
             }
         }
