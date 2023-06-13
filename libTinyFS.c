@@ -114,6 +114,8 @@ int tfs_mount(char *filename) {
     //error return
     return -1;
 
+    
+
 
 }
 int tfs_unmount(void) {
@@ -486,23 +488,32 @@ int tfs_readByte(fileDescriptor FD, char *buffer){
         if(FD == entry[0]){
             data_block_num = entry[1]; 
             offset = entry[2];
-            // return error if past 256,  have to change this later
+            // if offset is greater than 256, then have to go to next byte
             if(offset > 256){
-                // find what data block we should be at
-                int next_data_block = (offset / 256) + 29;
 
-                // read in inode block to find where that next data block should be
-                uint8_t * block;
-                readBlock(mounted_disk, entry[0], block);
-
-                // if we are trying to read past the end of the file
-                if(block[next_data_block] == 0){
-                    printf("EOF error in tfs_readByte.\n");
-                    return -1;
+                uint8_t * inode;
+                readBlock(mounted_disk, entry[0], inode);
+                int next = 30;
+                int num_of_data_blocks = inode[next];
+                int block_num = offset / BLOCKSIZE;
+                int current_block = 0;
+                int current_data_chunk_block = 0;
+                while (current_block != block_num){
+                    current_block++;
+                    current_data_chunk_block++;
+                    // if we have surpassed current data chunk, go to next data chunk
+                    if (current_block == num_of_data_blocks){
+                        current_data_chunk_block = 0;
+                        next = next + 2;
+                        num_of_data_blocks = inode[next];
+                        // if num_of_data_blocks is still 0, then the offset is larger than the file size
+                        if (num_of_data_blocks == 0){
+                            printf("error, readbyte has gone too far");
+                            return -1;
+                        }
+                    }
                 }
-
-                // else, set correct data block number
-                data_block_num = block[next_data_block];
+                data_block_num = inode[next-1] + current_data_chunk_block;
             }
         }
     }
